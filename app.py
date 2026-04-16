@@ -535,10 +535,13 @@ else:
 
 # ── Chat input ────────────────────────────────────────────────────────────────
 if question := st.chat_input("Ask about COVID data… (e.g. 'Italy cases in 2020')"):
-    # Ricrea connessione ad ogni domanda — evita sessioni scadute su Streamlit Cloud
     active_conn = get_connection()
     if not active_conn:
-        st.error("No Snowflake connection.")
+        try:
+            private_key_str = st.secrets["snowflake"]["private_key"]
+            st.error(f"Key found, length: {len(private_key_str)}")
+        except Exception as e:
+            st.error(f"Secrets error: {e}")
         st.stop()
 
     st.session_state.messages.append({"role": "user", "content": question})
