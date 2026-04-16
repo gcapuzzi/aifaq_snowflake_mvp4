@@ -535,7 +535,9 @@ else:
 
 # ── Chat input ────────────────────────────────────────────────────────────────
 if question := st.chat_input("Ask about COVID data… (e.g. 'Italy cases in 2020')"):
-    if not conn:
+    # Ricrea connessione ad ogni domanda — evita sessioni scadute su Streamlit Cloud
+    active_conn = get_connection()
+    if not active_conn:
         st.error("No Snowflake connection.")
         st.stop()
 
@@ -543,7 +545,7 @@ if question := st.chat_input("Ask about COVID data… (e.g. 'Italy cases in 2020
 
     with st.spinner("Generating SQL and querying Snowflake…"):
         prompt = build_prompt(question, st.session_state.messages[:-1])
-        raw = call_cortex(conn, prompt, st.session_state.model)
+        raw = call_cortex(active_conn, prompt, st.session_state.model)
         sql, explanation = parse_response(raw)
 
         df = None
@@ -551,7 +553,7 @@ if question := st.chat_input("Ask about COVID data… (e.g. 'Italy cases in 2020
 
         if sql:
             try:
-                df = run_sql(conn, sql)
+                df = run_sql(active_conn, sql)
                 if df.empty:
                     explanation += "\n\n*(No rows returned — try a different time range or country name.)*"
             except Exception as e:
