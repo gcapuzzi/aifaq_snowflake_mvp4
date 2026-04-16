@@ -4,24 +4,6 @@ import re
 import pandas as pd
 
 
-# ── Connection ────────────────────────────────────────────────────────────────
-conn = get_connection()
-
-# DEBUG TEMPORANEO
-if conn is None:
-    st.error("Connection failed — check secrets")
-    st.stop()
-else:
-    try:
-        cur = conn.cursor()
-        cur.execute("SELECT CURRENT_USER(), CURRENT_ACCOUNT()")
-        row = cur.fetchone()
-        st.success(f"✓ Connected as {row[0]} on {row[1]}")
-    except Exception as e:
-        st.error(f"Query error: {e}")
-        st.stop()
-
-
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="SnowMind · COVID Data Intelligence",
@@ -260,6 +242,23 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 </style>
 """, unsafe_allow_html=True)
+
+# ── Connection ────────────────────────────────────────────────────────────────
+conn = get_connection()
+
+# DEBUG TEMPORANEO
+if conn is None:
+    st.error("Connection failed — check secrets")
+    st.stop()
+else:
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT CURRENT_USER(), CURRENT_ACCOUNT()")
+        row = cur.fetchone()
+        st.success(f"✓ Connected as {row[0]} on {row[1]}")
+    except Exception as e:
+        st.error(f"Query error: {e}")
+        st.stop()
 
 # ── Snowflake connection ──────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
