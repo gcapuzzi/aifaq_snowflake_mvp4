@@ -360,7 +360,7 @@ EXPLANATION:
 def call_cortex(conn, prompt: str, model: str = "mistral-large2") -> str:
     cur = conn.cursor()
     cur.execute(
-        "SELECT SNOWFLAKE.CORTEX.COMPLETE(?, ?)",
+        "SELECT SNOWFLAKE.CORTEX.COMPLETE(%s, %s)",
         (model, prompt)
     )
     row = cur.fetchone()
