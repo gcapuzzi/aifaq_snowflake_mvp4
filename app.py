@@ -3,6 +3,22 @@ import snowflake.connector
 import re
 import pandas as pd
 
+
+conn = get_connection()
+
+# DEBUG TEMPORANEO — rimuovi dopo
+if conn is None:
+    st.error("Connection failed")
+else:
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT CURRENT_USER(), CURRENT_ACCOUNT()")
+        row = cur.fetchone()
+        st.success(f"Connected as {row[0]} on {row[1]}")
+    except Exception as e:
+        st.error(f"Query error: {e}")
+
+
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="SnowMind · COVID Data Intelligence",
