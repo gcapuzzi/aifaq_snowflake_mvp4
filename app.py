@@ -358,14 +358,11 @@ EXPLANATION:
 
 # ── Call Cortex LLM ───────────────────────────────────────────────────────────
 def call_cortex(conn, prompt: str, model: str = "mistral-large2") -> str:
-    safe = prompt.replace("'", "\\'").replace("\\", "\\\\")
     cur = conn.cursor()
-    cur.execute(f"""
-        SELECT SNOWFLAKE.CORTEX.COMPLETE(
-            '{model}',
-            '{safe}'
-        )
-    """)
+    cur.execute(
+        "SELECT SNOWFLAKE.CORTEX.COMPLETE(?, ?)",
+        (model, prompt)
+    )
     row = cur.fetchone()
     return row[0] if row else ""
 
