@@ -270,26 +270,10 @@ def get_connection():
             role=st.secrets["snowflake"].get("role", "ACCOUNTADMIN"),
         )
     except Exception as e:
-        st.error(f"Snowflake connection error: {str(e)}")
-        import traceback
-        st.code(traceback.format_exc())
+        st.session_state["conn_error"] = str(e)
         return None
 
 conn = get_connection()
-
-# DEBUG TEMPORANEO
-if conn is None:
-    st.error("Connection failed — check secrets")
-    st.stop()
-else:
-    try:
-        cur = conn.cursor()
-        cur.execute("SELECT CURRENT_USER(), CURRENT_ACCOUNT()")
-        row = cur.fetchone()
-        st.success(f"✓ Connected as {row[0]} on {row[1]}")
-    except Exception as e:
-        st.error(f"Query error: {e}")
-        st.stop()
 
 # ── Snowflake connection ──────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
@@ -537,11 +521,8 @@ else:
 if question := st.chat_input("Ask about COVID data… (e.g. 'Italy cases in 2020')"):
     active_conn = get_connection()
     if not active_conn:
-        try:
-            private_key_str = st.secrets["snowflake"]["private_key"]
-            st.error(f"Key found, length: {len(private_key_str)}")
-        except Exception as e:
-            st.error(f"Secrets error: {e}")
+        err = st.session_state.get("conn_error", "unknown")
+        st.error(f"Connection failed: {err}")
         st.stop()
 
     st.session_state.messages.append({"role": "user", "content": question})
