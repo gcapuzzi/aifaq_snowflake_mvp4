@@ -270,7 +270,9 @@ def get_connection():
             role=st.secrets["snowflake"].get("role", "ACCOUNTADMIN"),
         )
     except Exception as e:
-        st.error(f"Snowflake connection error: {e}")
+        st.error(f"Snowflake connection error: {str(e)}")
+        import traceback
+        st.code(traceback.format_exc())
         return None
 
 conn = get_connection()
