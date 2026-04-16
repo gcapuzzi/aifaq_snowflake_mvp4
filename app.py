@@ -273,24 +273,6 @@ def get_connection():
         st.session_state["conn_error"] = str(e)
         return None
 
-conn = get_connection()
-
-# ── Snowflake connection ──────────────────────────────────────────────────────
-@st.cache_resource(show_spinner=False)
-def get_connection():
-    try:
-        return snowflake.connector.connect(
-            account=st.secrets["snowflake"]["account"],
-            user=st.secrets["snowflake"]["user"],
-            password=st.secrets["snowflake"]["password"],
-            warehouse=st.secrets["snowflake"]["warehouse"],
-            database="COVID19_EPIDEMIOLOGICAL_DATA",
-            schema="PUBLIC",
-            role=st.secrets["snowflake"].get("role", ""),
-        )
-    except Exception as e:
-        return None
-
 def run_sql(conn, sql: str):
     """Execute SQL and return a DataFrame."""
     cur = conn.cursor()
