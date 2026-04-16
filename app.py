@@ -244,16 +244,30 @@ html, body, [data-testid="stAppViewContainer"] {
 """, unsafe_allow_html=True)
 
 # ── Connection ────────────────────────────────────────────────────────────────
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+
 def get_connection():
     try:
+        private_key_str = st.secrets["snowflake"]["private_key"]
+        private_key = serialization.load_pem_private_key(
+            private_key_str.encode(),
+            password=None,
+            backend=default_backend()
+        )
+        private_key_bytes = private_key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        )
         return snowflake.connector.connect(
             account=st.secrets["snowflake"]["account"],
             user=st.secrets["snowflake"]["user"],
-            password=st.secrets["snowflake"]["password"],
+            private_key=private_key_bytes,
             warehouse=st.secrets["snowflake"]["warehouse"],
             database="COVID19_EPIDEMIOLOGICAL_DATA",
             schema="PUBLIC",
-            role=st.secrets["snowflake"].get("role", "SYSADMIN"),
+            role=st.secrets["snowflake"].get("role", "ACCOUNTADMIN"),
         )
     except Exception as e:
         st.error(f"Snowflake connection error: {e}")
