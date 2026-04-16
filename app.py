@@ -294,15 +294,19 @@ Key tables:
    - DEATHS (NUMBER): cumulative deaths
    - RECOVERED (NUMBER): cumulative recovered
 
-2. PCM_DPS_COVID19 — Italy only
-   - DATA (DATE): date
-   - STATO (VARCHAR): always 'ITA'
-   - DENOMINAZIONE_REGIONE (VARCHAR): region name
-   - TOTALE_CASI (NUMBER): total confirmed cases
-   - DECEDUTI (NUMBER): deaths
-   - DIMESSI_GUARITI (NUMBER): recovered
-   - TERAPIA_INTENSIVA (NUMBER): ICU patients
-   - RICOVERATI_CON_SINTOMI (NUMBER): hospitalised
+2. PCM_DPS_COVID19 — Italy data
+   - COUNTRY_REGION (VARCHAR): always 'Italy'
+   - PROVINCE_STATE (VARCHAR): region name (nullable)
+   - DATE (DATE): date of record
+   - CASE_TYPE (VARCHAR): one of 'Confirmed', 'Deaths', 'Recovered', 'Active'
+   - CASES (NUMBER): number of cases for that CASE_TYPE
+   - DIFFERENCE (NUMBER): daily change
+   - ISO3166_1 (VARCHAR): country code
+   - ISO3166_2 (VARCHAR): region code
+   - LAST_UPDATED_DATE (TIMESTAMP): last update
+   IMPORTANT: to get total confirmed cases use WHERE CASE_TYPE = 'Confirmed'
+   IMPORTANT: to get deaths use WHERE CASE_TYPE = 'Deaths'
+   IMPORTANT: always filter by CASE_TYPE when querying this table
 
 3. OWID_VACCINATIONS
    - LOCATION (VARCHAR): country name
@@ -312,10 +316,9 @@ Key tables:
    - PEOPLE_FULLY_VACCINATED (NUMBER): fully vaccinated
    - DAILY_VACCINATIONS (NUMBER): daily doses
 
-Always use DATE >= '2020-01-01' filters when querying time ranges.
 Always use LIMIT 100 unless the user asks for aggregated totals.
 Always alias columns with clear names in SELECT.
-For Italy questions prefer PCM_DPS_COVID19.
+For Italy questions use PCM_DPS_COVID19 with appropriate CASE_TYPE filter.
 For global questions use JHU_COVID_19.
 For vaccination questions use OWID_VACCINATIONS.
 """
