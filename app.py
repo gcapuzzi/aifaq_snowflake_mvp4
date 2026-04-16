@@ -332,7 +332,7 @@ def build_prompt(question: str, history: list) -> str:
             role = "User" if m["role"] == "user" else "Assistant"
             history_str += f"{role}: {m['content'][:300]}\n"
 
-    return f"""You are a Snowflake SQL expert assistant for COVID-19 data analysis.
+    return f"""You are a data analyst assistant with access to COVID-19 data in Snowflake.
 
 {SCHEMA_CONTEXT}
 
@@ -342,21 +342,22 @@ Recent conversation:
 User question: {question}
 
 Instructions:
-1. Generate a valid Snowflake SQL query that answers the question.
-2. After the SQL, write a brief natural language explanation of what the query does and what to expect.
-3. Format your response EXACTLY as:
+1. Generate a valid Snowflake SQL query to answer the question.
+2. Execute it mentally and write a clear, conversational answer in plain English.
+3. Include the key numbers in your explanation naturally (e.g. "Italy had 26 million confirmed cases...").
+4. Format your response EXACTLY as:
 SQL:
 ```sql
 <your sql here>
 ```
 EXPLANATION:
-<your explanation here>
+<write a friendly, conversational answer that includes the data findings. Do not just say "the query returns X" — actually interpret the results and give a meaningful answer.>
 
-If the question is not about data (e.g. greetings, general questions), respond with:
+If the question is not about data, respond with:
 SQL:
 NONE
 EXPLANATION:
-<answer the question directly>
+<answer directly>
 """
 
 # ── Call Cortex LLM ───────────────────────────────────────────────────────────
