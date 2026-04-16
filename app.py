@@ -244,6 +244,21 @@ html, body, [data-testid="stAppViewContainer"] {
 """, unsafe_allow_html=True)
 
 # ── Connection ────────────────────────────────────────────────────────────────
+def get_connection():
+    try:
+        return snowflake.connector.connect(
+            account=st.secrets["snowflake"]["account"],
+            user=st.secrets["snowflake"]["user"],
+            password=st.secrets["snowflake"]["password"],
+            warehouse=st.secrets["snowflake"]["warehouse"],
+            database="COVID19_EPIDEMIOLOGICAL_DATA",
+            schema="PUBLIC",
+            role=st.secrets["snowflake"].get("role", "SYSADMIN"),
+        )
+    except Exception as e:
+        st.error(f"Snowflake connection error: {e}")
+        return None
+
 conn = get_connection()
 
 # DEBUG TEMPORANEO
