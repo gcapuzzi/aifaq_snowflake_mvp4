@@ -290,36 +290,61 @@ Key tables:
    - COUNTRY_REGION (VARCHAR): country name
    - PROVINCE_STATE (VARCHAR): province or state (nullable)
    - DATE (DATE): date of record
-   - CONFIRMED (NUMBER): cumulative confirmed cases
-   - DEATHS (NUMBER): cumulative deaths
-   - RECOVERED (NUMBER): cumulative recovered
-
-2. PCM_DPS_COVID19 — Italy data
-   - COUNTRY_REGION (VARCHAR): always 'Italy'
-   - PROVINCE_STATE (VARCHAR): region name (nullable)
-   - DATE (DATE): date of record
    - CASE_TYPE (VARCHAR): one of 'Confirmed', 'Deaths', 'Recovered', 'Active'
    - CASES (NUMBER): number of cases for that CASE_TYPE
+   - LONG (FLOAT): longitude
+   - LAT (FLOAT): latitude
    - DIFFERENCE (NUMBER): daily change
    - ISO3166_1 (VARCHAR): country code
    - ISO3166_2 (VARCHAR): region code
    - LAST_UPDATED_DATE (TIMESTAMP): last update
+   - LAST_REPORTED_FLAG (BOOLEAN): whether this is the last reported value
+   IMPORTANT: always filter by CASE_TYPE when querying this table
+   IMPORTANT: to get confirmed cases use WHERE CASE_TYPE = 'Confirmed'
+   IMPORTANT: to get deaths use WHERE CASE_TYPE = 'Deaths'
+
+2. PCM_DPS_COVID19 — Italy data
+   - COUNTRY_REGION (VARCHAR): always 'Italy'
+   - PROVINCE_STATE (VARCHAR): region name (nullable)
+   - COUNTY (VARCHAR): county name (nullable)
+   - FIPS (VARCHAR): FIPS code (nullable)
+   - DATE (DATE): date of record
+   - CASE_TYPE (VARCHAR): one of 'Confirmed', 'Deaths', 'Recovered', 'Active'
+   - CASES (NUMBER): number of cases for that CASE_TYPE
+   - LONG (FLOAT): longitude
+   - LAT (FLOAT): latitude
+   - ISO3166_1 (VARCHAR): country code
+   - ISO3166_2 (VARCHAR): region code
+   - DIFFERENCE (NUMBER): daily change
+   - LAST_UPDATED_DATE (TIMESTAMP): last update
+   - LAST_REPORTED_FLAG (BOOLEAN): whether this is the last reported value
+   IMPORTANT: always filter by CASE_TYPE when querying this table
    IMPORTANT: to get total confirmed cases use WHERE CASE_TYPE = 'Confirmed'
    IMPORTANT: to get deaths use WHERE CASE_TYPE = 'Deaths'
-   IMPORTANT: always filter by CASE_TYPE when querying this table
 
 3. OWID_VACCINATIONS
-   - LOCATION (VARCHAR): country name
+   - COUNTRY_REGION (VARCHAR): country name  ← not LOCATION!
    - DATE (DATE): date
+   - ISO3166_1 (VARCHAR): country code
    - TOTAL_VACCINATIONS (NUMBER): total doses administered
    - PEOPLE_VACCINATED (NUMBER): people with at least one dose
    - PEOPLE_FULLY_VACCINATED (NUMBER): fully vaccinated
    - DAILY_VACCINATIONS (NUMBER): daily doses
+   - DAILY_VACCINATIONS_RAW (NUMBER): raw daily doses
+   - TOTAL_VACCINATIONS_PER_HUNDRED (FLOAT): doses per 100 people
+   - PEOPLE_VACCINATED_PER_HUNDRED (FLOAT): vaccinated per 100 people
+   - PEOPLE_FULLY_VACCINATED_PER_HUNDRED (FLOAT): fully vaccinated per 100 people
+   - DAILY_VACCINATIONS_PER_MILLION (FLOAT): daily doses per million
+   - VACCINES (VARCHAR): vaccine types used
+   - SOURCE_NAME (VARCHAR): data source
+   - LAST_UPDATE_DATE (TIMESTAMP): last update
+   - LAST_REPORTED_FLAG (BOOLEAN): whether this is the last reported value
+   IMPORTANT: use COUNTRY_REGION not LOCATION for country filtering
 
 Always use LIMIT 100 unless the user asks for aggregated totals.
 Always alias columns with clear names in SELECT.
 For Italy questions use PCM_DPS_COVID19 with appropriate CASE_TYPE filter.
-For global questions use JHU_COVID_19.
+For global questions use JHU_COVID_19 with appropriate CASE_TYPE filter.
 For vaccination questions use OWID_VACCINATIONS.
 """
 
