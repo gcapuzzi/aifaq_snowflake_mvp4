@@ -532,6 +532,10 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
+        if msg.get("sql"):
+            st.markdown("**Generated SQL**")
+            st.code(msg["sql"], language="sql")
+
         if msg.get("dataframe") is not None:
             st.dataframe(
                 msg["dataframe"],
