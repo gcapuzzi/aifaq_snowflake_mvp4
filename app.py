@@ -303,8 +303,19 @@ Key tables:
    IMPORTANT: to get confirmed cases use WHERE CASE_TYPE = 'Confirmed'
    IMPORTANT: to get deaths use WHERE CASE_TYPE = 'Deaths'
    IMPORTANT: JHU_COVID_19 has both country-level and province-level rows.
-   For country totals always filter WHERE PROVINCE_STATE IS NULL to avoid double counting.
-   US data is split by state, so without this filter USA will be undercounted.
+    Some countries have ONLY province-level data: 'United States', 'Australia', 
+    'Canada', 'China', 'United Kingdom'.
+    For these countries you MUST aggregate using SUM of MAX per province:
+    SELECT COUNTRY_REGION, SUM(max_cases) AS total
+    FROM (
+        SELECT COUNTRY_REGION, PROVINCE_STATE, MAX(CASES) AS max_cases
+        FROM JHU_COVID_19
+        WHERE CASE_TYPE = 'Confirmed'
+        GROUP BY COUNTRY_REGION, PROVINCE_STATE
+    )
+    GROUP BY COUNTRY_REGION
+    For all other countries filter WHERE PROVINCE_STATE IS NULL to avoid double counting.
+    For global rankings that include all countries, use the subquery approach for everyone.
 
 2. PCM_DPS_COVID19 — Italy data
    - COUNTRY_REGION (VARCHAR): always 'Italy'
