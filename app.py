@@ -649,6 +649,9 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
+        # Render SQL and DataFrame if present
+
+        """
         if msg.get("sql"):
             st.markdown("**Generated SQL**")
             st.code(msg["sql"], language="sql")
@@ -658,7 +661,7 @@ else:
                 msg["dataframe"],
                 use_container_width=True,
                 hide_index=True,
-            )
+            ) """
 
 # ── Chat input ────────────────────────────────────────────────────────────────
 if question := st.chat_input("Ask about COVID data… (e.g. 'Italy cases in 2020')"):
