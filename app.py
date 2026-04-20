@@ -443,6 +443,113 @@ def parse_response(text: str):
 
     return sql, explanation
 
+def remove_implicit_date_filter(sql: str, question: str) -> str:
+    """Rimuove filtri DATE aggiunti dal LLM senza che l'utente li abbia richiesti."""
+    if not sql:
+        return sql
+
+    date_keywords = [
+        "2020", "2021", "2022", "2023", "2024",
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december",
+        "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+        "last year", "this year", "last month", "yesterday",
+        "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+        "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
+    ]
+    question_lower = question.lower()
+    user_mentioned_date = any(kw in question_lower for kw in date_keywords)
+
+    if not user_mentioned_date:
+        # Rimuove AND DATE BETWEEN '...' AND '...'
+        sql = re.sub(
+            r'\s+AND\s+DATE\s+BETWEEN\s+\'\d{4}-\d{2}-\d{2}\'\s+AND\s+\'\d{4}-\d{2}-\d{2}\'',
+            '',
+            sql,
+            flags=re.IGNORECASE
+        )
+        # Rimuove AND DATE >= / <= / = '...'
+        sql = re.sub(
+            r'\s+AND\s+DATE\s*[><=!]+\s*\'\d{4}-\d{2}-\d{2}\'',
+            '',
+            sql,
+            flags=re.IGNORECASE
+        )
+        # Rimuove WHERE DATE BETWEEN '...' AND '...' (quando è l'unica condizione)
+        sql = re.sub(
+            r'\s+WHERE\s+DATE\s+BETWEEN\s+\'\d{4}-\d{2}-\d{2}\'\s+AND\s+\'\d{4}-\d{2}-\d{2}\'',
+            '',
+            sql,
+            flags=re.IGNORECASE
+        )
+
+    return sql
+
+def summarize_dataframe(df: pd.DataFrame, max_rows: int = 20) -> str:
+    """Prepara un riassunto del dataframe da passare al LLM."""
+    if df.empty:
+        return "The query returned no results."
+    
+    total_rows = len(df)
+    
+    if total_rows <= max_rows:
+        # Passa tutto
+        return f"Query returned {total_rows} rows:\n{df.to_string(index=False)}"
+    
+    # Ibrida: prime 5 righe + statistiche
+    sample = df.head(5).to_string(index=False)
+    
+    stats_lines = [f"Query returned {total_rows} rows. Showing first 5 rows + summary statistics:"]
+    stats_lines.append(f"\nFirst 5 rows:\n{sample}")
+    stats_lines.append("\nSummary statistics:")
+    
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            stats_lines.append(
+                f"- {col}: min={df[col].min():,.0f}, max={df[col].max():,.0f}, "
+                f"avg={df[col].mean():,.0f}, total={df[col].sum():,.0f}"
+            )
+        else:
+            unique_vals = df[col].nunique()
+            stats_lines.append(f"- {col}: {unique_vals} unique values")
+    
+    return "\n".join(stats_lines)
+
+def build_conversation_prompt(question: str, sql: str, data_summary: str, history: list) -> str:
+    history_str = ""
+    if history:
+        last = history[-4:]
+        for m in last:
+            role = "User" if m["role"] == "user" else "Assistant"
+            history_str += f"{role}: {m['content'][:300]}\n"
+
+    return f"""You are a friendly data analyst assistant specializing in COVID-19 data.
+You have just executed a SQL query and received the results below.
+Your job is to answer the user's question in a clear, conversational way using the actual data.
+
+Recent conversation:
+{history_str}
+
+User question: {question}
+
+SQL executed:
+{sql}
+
+Query results:
+{data_summary}
+
+Instructions:
+- Answer in a friendly, conversational tone
+- Include the actual numbers from the results naturally in your answer
+- Highlight the most interesting findings
+- If the data shows a trend, describe it
+- Keep the answer concise but informative
+- Do NOT say "the query returns" or "the results show" — just answer directly
+- Answer in the same language the user used
+"""
+
+
+
 # ── Session state ─────────────────────────────────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -533,12 +640,6 @@ else:
         css_class = "msg-user" if msg["role"] == "user" else "msg-assistant"
 
         sql_html = ""
-        if msg.get("sql"):
-            sql_html = f"""
-            <div class="sql-box">
-                <div class="sql-label">Generated SQL</div>
-                {msg["sql"]}
-            </div>"""
 
         st.markdown(f"""
         <div class="msg {css_class}">
@@ -569,23 +670,39 @@ if question := st.chat_input("Ask about COVID data… (e.g. 'Italy cases in 2020
 
     st.session_state.messages.append({"role": "user", "content": question})
 
-    with st.spinner("Generating SQL and querying Snowflake…"):
+    with st.spinner("Querying Snowflake…"):
+        # Step 1 — genera SQL
         prompt = build_prompt(question, st.session_state.messages[:-1])
         raw = call_cortex(active_conn, prompt, st.session_state.model)
-        sql, explanation = parse_response(raw)
+        sql, _ = parse_response(raw)
+        sql = remove_implicit_date_filter(sql, question)
 
         df = None
+        explanation = ""
         error_msg = None
 
         if sql:
             try:
                 df = run_sql(active_conn, sql)
+                
+                # Step 2 — risposta conversazionale con i dati reali
+                data_summary = summarize_dataframe(df)
+                conv_prompt = build_conversation_prompt(
+                    question, sql, data_summary, st.session_state.messages[:-1]
+                )
+                explanation = call_cortex(active_conn, conv_prompt, st.session_state.model)
+                
                 if df.empty:
-                    explanation += "\n\n*(No rows returned — try a different time range or country name.)*"
+                    explanation += "\n\n*(No data found — try a different time range or country name.)*"
+                    
             except Exception as e:
                 error_msg = str(e)
-                explanation += f"\n\n⚠ SQL error: `{error_msg}`"
+                explanation = f"I encountered an error while querying the data: `{error_msg}`"
                 sql = None
+        else:
+            # Nessun SQL necessario — risposta diretta
+            exp_match = re.search(r'EXPLANATION:\s*(.*)', raw, re.DOTALL | re.IGNORECASE)
+            explanation = exp_match.group(1).strip() if exp_match else raw.strip()
 
     st.session_state.messages.append({
         "role": "assistant",
