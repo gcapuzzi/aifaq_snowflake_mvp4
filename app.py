@@ -346,6 +346,17 @@ Always alias columns with clear names in SELECT.
 For Italy questions use PCM_DPS_COVID19 with appropriate CASE_TYPE filter.
 For global questions use JHU_COVID_19 with appropriate CASE_TYPE filter.
 For vaccination questions use OWID_VACCINATIONS.
+
+CRITICAL — CASE_TYPE values differ by table:
+- JHU_COVID_19: 'Confirmed', 'Deaths', 'Recovered', 'Active'
+- PCM_DPS_COVID19: 'Confirmed', 'Deceased', 'Recovered', 'Active'
+NEVER use 'Deaths' when querying PCM_DPS_COVID19, always use 'Deceased'.
+
+CRITICAL — CUMULATIVE DATA:
+CASES, TOTAL_VACCINATIONS, PEOPLE_VACCINATED, PEOPLE_FULLY_VACCINATED are cumulative.
+NEVER use SUM() on these columns — it multiplies values incorrectly.
+To get the total for a country or region, always use MAX(CASES) or filter by the latest DATE.
+To get daily changes use the DIFFERENCE column instead.
 """
 
 # ── Text-to-SQL prompt ────────────────────────────────────────────────────────
