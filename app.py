@@ -371,6 +371,11 @@ CASES, TOTAL_VACCINATIONS, PEOPLE_VACCINATED, PEOPLE_FULLY_VACCINATED are cumula
 NEVER use SUM() on these columns — it multiplies values incorrectly.
 To get the total for a country or region, always use MAX(CASES) or filter by the latest DATE.
 To get daily changes use the DIFFERENCE column instead.
+CRITICAL — DATE FILTER:
+NEVER add a DATE filter unless the user explicitly mentions a specific 
+time period, year, or date range in their question.
+If the user asks for totals or rankings without mentioning dates, 
+query ALL available data with no date restrictions.
 """
 
 # ── Text-to-SQL prompt ────────────────────────────────────────────────────────
